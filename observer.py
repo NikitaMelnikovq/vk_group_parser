@@ -29,10 +29,10 @@ def file_changed(file_path):
     observer.join()
     return False
 
-if __name__ == "__main__":
-    path_to_watch = "data.json"
-    while True:
-        if file_changed(path_to_watch):
-            print("File has been modified")
-        else:
-            print("File has not been modified")
+# if __name__ == "__main__":
+#     path_to_watch = "data.json"
+#     while True:
+#         if file_changed(path_to_watch):
+#             print("File has been modified")
+#         else:
+#             print("File has not been modified")
