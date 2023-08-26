@@ -65,29 +65,27 @@ async def send_message_to_users(text, users_list) -> int:
     return count
 
 engine = create_engine(url=url_object, pool_recycle=3600, echo=True)
+session = Session(bind=engine)
 
 bot = Bot(token=BOT_TOKEN)
 
 dp = Dispatcher(bot=bot)
 
+
 @dp.message_handler(commands=["start"])
 async def start(msg: types.Message):
-    session = Session(bind=engine)
+    users = session.query(User).all()
 
-
-    table = Table("Users", MetaData(), autoload_with=engine)
-    try:
-        record = table.insert().values(user_id=msg.from_user.id, chat_id=msg.chat.id)
-        session.execute(statement=record)
-        await msg.answer(text="You subscribed to my bot", parse_mode="HTML")
-        session.commit()
-        session.close()
-    except IntegrityError:
-        await msg.answer(text="You already subscirbed to my bot")
+async def change(msg: types.Message):
     while True:
-        if file_changed('data.json'):
+        if file_changed('req.py'):
             users = session.query(User).all()
             await send_message_to_users(text="File has been modified", users_list=[user.user_id for user in users])
-
+@dp.message_handler(commands=["send_image"])
+async def image_handler(msg: types.Message):
+    await msg.answer_photo(photo="https://sun3-12.userapi.com/impg/CWmP0CXZl3wXrdY-yQVO_jx5S9ELLwtWI8_UXA/dtu77dXeMn8.jpg?size=604x604&quality=95&sign=413651e718d39434037e490854886050&c_uniq_tag=F1F0aNUjzENaBVmO4qrm3rsV98ZlOrtPSSusnphbJK4&type=album")
+@dp.message_handler(commands=["send_audio"])
+async def audio_handler(msg: types.Message):
+   await bot.send_audio(audio="https://cs3-16v4.vkuseraudio.net/s/v1/acmp/diMdC2xNxxqCLQsR_HN16atTzM-EPFVx5lhv3ymPUf1UAjbWr9Ig0AakVkX10dxOlw3HcCF31vyG_JkgtMbtv2jEuNnQAdG4XBQMnUVieuD2JYUZ1l9H7dbF7otIgCxPnQFH6aP3kiBMsXDh76pB5TUZQzmqUKg3rq9Pv-nL_8r3vjMDcA.mp3", chat_id=msg.chat.id)
 if __name__ == '__main__':
     executor.start_polling(dispatcher=dp, skip_updates=True)
