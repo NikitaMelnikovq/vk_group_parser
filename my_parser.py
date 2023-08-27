@@ -35,9 +35,8 @@ def gather_data():
         time.sleep(0.2)
     with open("data.json", 'w') as file:
         json.dump(obj=posts, fp=file, indent=4, ensure_ascii=False)
-    input()
     for post in posts:
-
+        
         # Разбираемся c простыми данными поста
         post_id = post["id"]
         post_text = post["text"]
@@ -50,7 +49,7 @@ def gather_data():
         # Забираем дату и конвертируем её в обычный вид
         post_date  = post["date"]
         date = datetime.fromtimestamp(post_date)
-        date = date.strftime('%Y-%m-%d %H:%M')
+        date = date.strftime('%Y-%m-%d %H-%M-%S')
 
         # Смотрим, какие у поста есть закрепы
         attachments = post["attachments"]
@@ -61,7 +60,8 @@ def gather_data():
             "Audio": [],
             "Photo": [],
             "Link": [],
-            "Document": []
+            "Document": [],
+            "Podcasts": []
         }
         if len(attachments) > 0:
             for attachment in attachments:
@@ -92,8 +92,15 @@ def gather_data():
                     video = attachment["video"]
                     owner_id = video.get("owner_id")
                     video_id = video.get("id")
-                    video_url = base_url+ "video.get?"
-                    video_request = requests.get()
+                    video_url = base_url+ f"video.get?video={owner_id}_{video_id}&access_token={API_VIDEO_KEY}&v=5.131"
+                    video_request = requests.get(video_url).json()
+                    videos = video_request.get("response").get("items")
+                    for vid in videos:
+                        urls["Video"].append(vid.get("player"))
+                if attachment["type"] == 'podcast':
+                    podcast = attachment.get("podcast")
+                    urls["Podcasts"].append(podcast["url"])
+
         # работаем с БД
         engine = create_engine(url=url_object)
         session = Session(bind=engine)
@@ -102,37 +109,47 @@ def gather_data():
         if post_id in ids:
             continue 
         else:
+
             table = Table("posts", MetaData())
             new_post = Post()
             new_post.post_id = post_id
+            new_post.links = urls["Link"]
+            new_post.doc_urls = urls["Document"]
+            new_post.image_urls = urls["Photo"]
+            new_post.audio_urls = urls["Audio"]
+            new_post.video_urls = urls["Video"]
+            new_post.podcast_urls = urls["Podcasts"]
+            new_post.post_date = date
+            new_post.group_name = group_name
+            new_post.post_text = post_text
             session.add(new_post)        
             session.commit()
             session.close()
 
-        # Создаём словарь с данными
-        data = {
-            "group_name": group_name,
-            "post_id": post_id,
-            "post_text": post_text,
-            "post_date": date,
-            "attachments": attachments,
-        }
+    #     # Создаём словарь с данными
+    #     data = {
+    #         "group_name": group_name,
+    #         "post_id": post_id,
+    #         "post_text": post_text,
+    #         "post_date": date,
+    #         "attachments": attachments,
+    #     }
 
-        # Добавление поста в массив для дальнейшей записи в файл
-        posts_data.append(data)
+    #     # Добавление поста в массив для дальнейшей записи в файл
+    #     posts_data.append(data)
 
-    # создаём папку и файл, если таковых нет
-    if not os.path.exists('data.json'):
+    # # создаём папку и файл, если таковых нет
+    # if not os.path.exists('data.json'):
 
-        # Создаём файл
-        with open('data.json', 'w') as f:
-            print(f"File {f.name} was created succesfully!")
+    #     # Создаём файл
+    #     with open('data.json', 'w') as f:
+    #         print(f"File {f.name} was created succesfully!")
     
-    # сохраняем полученные данные в файл
-    if len(posts_data) > 0:
-        with open('data.json', 'r+') as file: 
-            for post_data in posts_data:
-                json.dump(obj=post_data,fp=file, ensure_ascii=False, indent=4)
+    # # сохраняем полученные данные в файл
+    # if len(posts_data) > 0:
+    #     with open('data.json', 'r+') as file: 
+    #         for post_data in posts_data:
+    #             json.dump(obj=post_data,fp=file, ensure_ascii=False, indent=4)
 def main():
     # запускаем таймер на каждые 15 минут
     schedule.every(1).minutes.do(gather_data)

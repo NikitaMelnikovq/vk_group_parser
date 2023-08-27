@@ -1,4 +1,4 @@
-from sqlalchemy import URL, Integer, Column, DateTime
+from sqlalchemy import URL, Integer, Column, DateTime, JSON, Text
 from sqlalchemy.orm import declarative_base
 from config import DATABASE_HOST, DATABASE_PASSWORD, DATABASE_PORT, DATABASE_USERNAME, DATABASE
 from datetime import datetime
@@ -14,11 +14,19 @@ url_object = URL.create(
 Base = declarative_base()
 
 class User(Base):
-    __tablename__ = "Users"
+    __tablename__ = "users"
     user_id = Column(Integer, primary_key=True)
-    chat_id = Column(Integer, unique=True)
+    join_time = Column(DateTime)
 
 class Post(Base):
     __tablename__ = "posts"
+    group_name = Column(Text)
     post_id = Column(Integer, primary_key=True)
-    created_at = Column(DateTime, default=datetime.now)
+    post_text = Column(Text)
+    post_date = Column(DateTime)
+    video_urls = Column(JSON)
+    image_urls = Column(JSON)
+    audio_urls = Column(JSON)
+    links = Column(JSON)
+    doc_urls = Column(JSON)
+    podcast_urls = Column(JSON)
