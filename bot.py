@@ -1,14 +1,15 @@
 from aiogram import Bot, executor, types, Dispatcher
-from sqlalchemy import create_engine, Table, MetaData
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
+from sqlalchemy.orm import sessionmaker
 from config import BOT_TOKEN
+from sqlalchemy.future import select
 import asyncio
+from config import DATABASE_USERNAME, DATABASE_PORT, DATABASE, DATABASE_HOST, DATABASE_PASSWORD
 from observer import file_changed
-from db import url_object, User
+from db import url_object_async, User
 import logging
 from aiogram import exceptions
-from sqlalchemy.exc import IntegrityError
-
+from aiogram.types import KeyboardButton, ReplyKeyboardMarkup
 
 async def send_message_to_users_handler(
     user_id: int, text: str, disable_notification: bool = False
@@ -64,8 +65,6 @@ async def send_message_to_users(text, users_list) -> int:
 
     return count
 
-engine = create_engine(url=url_object, pool_recycle=3600, echo=True)
-session = Session(bind=engine)
 
 bot = Bot(token=BOT_TOKEN)
 
@@ -73,19 +72,32 @@ dp = Dispatcher(bot=bot)
 
 
 @dp.message_handler(commands=["start"])
-async def start(msg: types.Message):
-    users = session.query(User).all()
+async def start_command(msg: types.Message):
+    settings_keyboard = ReplyKeyboardMarkup(resize_keyboard=True)
+    b1 = KeyboardButton(text="/check")
+    b2 = KeyboardButton(text="/updates_on")
+    b3 = KeyboardButton(text="/updates_off")
+    settings_keyboard.add(b1)
+    settings_keyboard.add(b2)
+    settings_keyboard.add(b3)
+    await msg.answer("Добро пожаловать!\nЧтобы проверить, есть ли у вас подписка, нажмите кнопку /check\n\nЕсли у вас есть подписка, можете нажать /updates_on, чтобы включить обновления. Для их выключения нажмите /updates_off", reply_markup=settings_keyboard)
 
-async def change(msg: types.Message):
-    while True:
-        if file_changed('req.py'):
-            users = session.query(User).all()
-            await send_message_to_users(text="File has been modified", users_list=[user.user_id for user in users])
-@dp.message_handler(commands=["send_image"])
-async def image_handler(msg: types.Message):
-    await msg.answer_photo(photo="https://sun3-12.userapi.com/impg/CWmP0CXZl3wXrdY-yQVO_jx5S9ELLwtWI8_UXA/dtu77dXeMn8.jpg?size=604x604&quality=95&sign=413651e718d39434037e490854886050&c_uniq_tag=F1F0aNUjzENaBVmO4qrm3rsV98ZlOrtPSSusnphbJK4&type=album")
-@dp.message_handler(commands=["send_audio"])
-async def audio_handler(msg: types.Message):
-   await bot.send_audio(audio="https://cs3-16v4.vkuseraudio.net/s/v1/acmp/diMdC2xNxxqCLQsR_HN16atTzM-EPFVx5lhv3ymPUf1UAjbWr9Ig0AakVkX10dxOlw3HcCF31vyG_JkgtMbtv2jEuNnQAdG4XBQMnUVieuD2JYUZ1l9H7dbF7otIgCxPnQFH6aP3kiBMsXDh76pB5TUZQzmqUKg3rq9Pv-nL_8r3vjMDcA.mp3", chat_id=msg.chat.id)
+@dp.message_handler(commands=["check"])
+async def check_command(msg:  types.Message):
+    engine = create_async_engine(url=url_object_async)
+    async with engine.begin() as conn:
+        async_session = sessionmaker(bind=conn, class_=AsyncSession)
+        async with async_session() as session:
+            stmt = select(User)
+            result = await session.execute(stmt)
+            users = result.scalars().all()
+            
+            users_id = [user.user_id for user in users if user.updates == 1]
+            if msg.from_user.id in users_id:
+                await msg.answer("У вас есть подписка!")
+            else:
+                await msg.answer("У вас нет подписки!")
+                print(msg.from_user.id)
+
 if __name__ == '__main__':
     executor.start_polling(dispatcher=dp, skip_updates=True)

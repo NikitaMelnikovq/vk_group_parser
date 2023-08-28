@@ -109,8 +109,6 @@ def gather_data():
         if post_id in ids:
             continue 
         else:
-
-            table = Table("posts", MetaData())
             new_post = Post()
             new_post.post_id = post_id
             new_post.links = urls["Link"]
@@ -151,7 +149,7 @@ def gather_data():
     #         for post_data in posts_data:
     #             json.dump(obj=post_data,fp=file, ensure_ascii=False, indent=4)
 def main():
-    # запускаем таймер на каждые 15 минут
+    # запускаем таймер на каждую минуту
     schedule.every(1).minutes.do(gather_data)
     gather_data()
 

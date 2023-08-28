@@ -1,7 +1,9 @@
-from sqlalchemy import URL, Integer, Column, DateTime, JSON, Text
+from sqlalchemy import URL, Integer, Column, DateTime, JSON, Text, Boolean
 from sqlalchemy.orm import declarative_base
 from config import DATABASE_HOST, DATABASE_PASSWORD, DATABASE_PORT, DATABASE_USERNAME, DATABASE
 from datetime import datetime
+import time 
+
 url_object = URL.create(
     "mysql+mysqlconnector",
     username=DATABASE_USERNAME,
@@ -10,13 +12,21 @@ url_object = URL.create(
     port=DATABASE_PORT, 
     database=DATABASE
 )   
-
+url_object_async = URL.create(
+    "mysql+aiomysql",
+    username=DATABASE_USERNAME,
+    password=DATABASE_PASSWORD,
+    host=DATABASE_HOST,
+    port=DATABASE_PORT, 
+    database=DATABASE
+)   
 Base = declarative_base()
 
 class User(Base):
     __tablename__ = "users"
     user_id = Column(Integer, primary_key=True)
     join_time = Column(DateTime)
+    updates = Column(Boolean)
 
 class Post(Base):
     __tablename__ = "posts"
