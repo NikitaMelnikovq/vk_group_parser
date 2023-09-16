@@ -1,8 +1,6 @@
-from sqlalchemy import URL, Integer, Column, DateTime, JSON, Text, Boolean
+from sqlalchemy import URL, Integer, Column, DateTime, JSON, Text, Boolean, INTEGER
 from sqlalchemy.orm import declarative_base
 from config import DATABASE_HOST, DATABASE_PASSWORD, DATABASE_PORT, DATABASE_USERNAME, DATABASE
-from datetime import datetime
-import time 
 
 url_object = URL.create(
     "mysql+mysqlconnector",
@@ -11,7 +9,8 @@ url_object = URL.create(
     host=DATABASE_HOST,
     port=DATABASE_PORT, 
     database=DATABASE
-)   
+) 
+
 url_object_async = URL.create(
     "mysql+aiomysql",
     username=DATABASE_USERNAME,
@@ -40,3 +39,8 @@ class Post(Base):
     links = Column(JSON)
     doc_urls = Column(JSON)
     podcast_urls = Column(JSON)
+    indentity_date = Column(Integer)
+
+class UserGroups(Base):
+    __tablename__ = "user_groups"
+    group_id = Column(Integer, primary_key=True)

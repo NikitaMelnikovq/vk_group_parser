@@ -1,29 +1,22 @@
-from config import API_KEY, DATABASE_PASSWORD, DATABASE_USERNAME, DATABASE, DATABASE_HOST, DATABASE_PORT, USER_ID, API_VIDEO_KEY
+from config import API_KEY, API_VIDEO_KEY
 import requests
 import time
 import json
 from datetime import datetime
-from sqlalchemy import create_engine, MetaData, Table, URL
+from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
-import os
-from sqlalchemy.exc import IntegrityError
 import schedule
-from db import url_object, User, Post
+from db import url_object, Post, UserGroups
 
 def gather_data():
     # Основные данные
     base_url = 'https://api.vk.com/method/'
+    f_engine = create_engine(url=url_object)
+    f_session = Session(bind=f_engine)
 
-    groups_url = base_url + f'groups.get?user_id={USER_ID}&access_token={API_KEY}&v=5.131'
-
-    groups_request = requests.get(groups_url)
-    
-    try:
-        user_groups = groups_request.json().get("response").get("items")
-
-    except AttributeError as exp:
-        print("Запрос некорректен. Попробуйте проверить правильность и полноту введённых данных")
-
+    user_groups = [group.group_id for group in f_session.query(UserGroups).all()]
+    f_session.commit()
+    f_session.close()
     posts = []
     posts_data = []
     c = 0
@@ -33,10 +26,7 @@ def gather_data():
         for item in wall_request.json()["response"]["items"]:
             posts.append(item)
         time.sleep(0.2)
-    with open("data.json", 'w') as file:
-        json.dump(obj=posts, fp=file, indent=4, ensure_ascii=False)
     for post in posts:
-        
         # Разбираемся c простыми данными поста
         post_id = post["id"]
         post_text = post["text"]
@@ -46,6 +36,7 @@ def gather_data():
         group_url = base_url + f"groups.getById?group_id={abs(group)}&access_token={API_KEY}&v=5.131"
         group_name = requests.get(group_url).json()["response"][0]["name"]
         time.sleep(0.2)
+        
         # Забираем дату и конвертируем её в обычный вид
         post_date  = post["date"]
         date = datetime.fromtimestamp(post_date)
@@ -100,17 +91,16 @@ def gather_data():
                 if attachment["type"] == 'podcast':
                     podcast = attachment.get("podcast")
                     urls["Podcasts"].append(podcast["url"])
-
         # работаем с БД
         engine = create_engine(url=url_object)
         session = Session(bind=engine)
         ids = [post.post_id for post in session.query(Post).all()]
-
         if post_id in ids:
             continue 
         else:
             new_post = Post()
             new_post.post_id = post_id
+            new_post.indentity_date = post_date
             new_post.links = urls["Link"]
             new_post.doc_urls = urls["Document"]
             new_post.image_urls = urls["Photo"]
@@ -121,8 +111,8 @@ def gather_data():
             new_post.group_name = group_name
             new_post.post_text = post_text
             session.add(new_post)        
-            session.commit()
-            session.close()
+        session.commit()
+        session.close()
 
     #     # Создаём словарь с данными
     #     data = {

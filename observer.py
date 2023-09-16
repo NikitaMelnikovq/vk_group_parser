@@ -1,38 +1,15 @@
-import time
-from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler
+from sqlalchemy import create_engine, text
+from sqlalchemy.orm import Session
+from db import url_object
+with open('groups.txt') as file:
 
-class MyHandler(FileSystemEventHandler):
-    def __init__(self):
-        self.file_changed = False
+    engine = create_engine(url=url_object)
 
-    def on_modified(self, event):
-        if event.is_directory:
-            return
-        self.file_changed = True
+    session = Session(bind=engine)
 
-def file_changed(file_path):
-    event_handler = MyHandler()
-    observer = Observer()
-    observer.schedule(event_handler, path=file_path, recursive=False)
-    observer.start()
-
-    try:
-        while True:
-            if event_handler.file_changed:
-                observer.stop()
-                return True
-            time.sleep(1)
-    except KeyboardInterrupt:
-        observer.stop()
-
-    observer.join()
-    return False
-
-# if __name__ == "__main__":
-#     path_to_watch = "data.json"
-#     while True:
-#         if file_changed(path_to_watch):
-#             print("File has been modified")
-#         else:
-#             print("File has not been modified")
+    groups = list(filter(lambda x: int(x.strip()), file.readlines()))
+    
+    for group in groups: 
+        session.execute(statement=text(f"INSERT INTO user_groups VALUES ({group});"))
+    session.commit()
+    session.close() 

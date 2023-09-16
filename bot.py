@@ -1,15 +1,16 @@
-from aiogram import Bot, executor, types, Dispatcher
-from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
-from sqlalchemy.orm import sessionmaker
+from aiogram import Bot, types, Dispatcher
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from config import BOT_TOKEN
 from sqlalchemy.future import select
 import asyncio
-from config import DATABASE_USERNAME, DATABASE_PORT, DATABASE, DATABASE_HOST, DATABASE_PASSWORD
-from observer import file_changed
 from db import url_object_async, User
 import logging
 from aiogram import exceptions
 from aiogram.types import KeyboardButton, ReplyKeyboardMarkup
+import schedule
+import time 
+from aiogram.filters import Command, CommandStart
+import sys 
 
 async def send_message_to_users_handler(
     user_id: int, text: str, disable_notification: bool = False
@@ -70,9 +71,24 @@ bot = Bot(token=BOT_TOKEN)
 
 dp = Dispatcher(bot=bot)
 
+async def send_messages_to_users_handler():
+    engine = create_async_engine(url=url_object_async)
+    session = async_sessionmaker(bind=engine, expire_on_commit=False)
+    async with session() as session:
+        pass
 
-@dp.message_handler(commands=["start"])
-async def start_command(msg: types.Message):
+async def send_messages_to_users():
+    pass 
+
+async def main():
+    schedule.every(5).minutes.do()
+    while True:
+        schedule.run_pending()
+        time.sleep(1)
+
+@dp.message(CommandStart())
+async def start_handler(msg: types.Message):
+    ReplyKeyboardMarkup()
     settings_keyboard = ReplyKeyboardMarkup(resize_keyboard=True)
     b1 = KeyboardButton(text="/check")
     b2 = KeyboardButton(text="/updates_on")
@@ -82,22 +98,38 @@ async def start_command(msg: types.Message):
     settings_keyboard.add(b3)
     await msg.answer("Добро пожаловать!\nЧтобы проверить, есть ли у вас подписка, нажмите кнопку /check\n\nЕсли у вас есть подписка, можете нажать /updates_on, чтобы включить обновления. Для их выключения нажмите /updates_off", reply_markup=settings_keyboard)
 
-@dp.message_handler(commands=["check"])
-async def check_command(msg:  types.Message):
+async def check_user(user_id):
     engine = create_async_engine(url=url_object_async)
-    async with engine.begin() as conn:
-        async_session = sessionmaker(bind=conn, class_=AsyncSession)
-        async with async_session() as session:
-            stmt = select(User)
-            result = await session.execute(stmt)
-            users = result.scalars().all()
-            
-            users_id = [user.user_id for user in users if user.updates == 1]
-            if msg.from_user.id in users_id:
-                await msg.answer("У вас есть подписка!")
-            else:
-                await msg.answer("У вас нет подписки!")
-                print(msg.from_user.id)
+    async_session = async_sessionmaker(bind=engine, expire_on_commit=False)
+    async with async_session() as session:
+        stmt = select(User)
+        result = await session.execute(stmt)
+        users = result.scalars().all()
+        users_id = [user.user_id for user in users if user.updates == 1]
+        return user_id in users_id
 
+@dp.message(Command(commands=["check"]))
+async def check_handler(msg: types.Message):
+    if await check_user(msg.from_user.id):
+        await msg.answer("У вас есть подписка!")
+    else:
+        await msg.answer("У вас нет подписки!")
+
+@dp.message(Command(commands=["updates_on"]))
+async def updates_on_handler(msg: types.Message):
+    if await check_user(msg.from_user.id):
+        await msg.answer("Вы подключили обновления")
+    else:
+        await msg.answer("У вас нет доступа к функционалу бота. Попросите админа оформить подписку")
+
+@dp.message(Command(commands=["updates_off"]))
+async def updates_on_handler(msg: types.Message):
+    if await check_user(msg.from_user.id):
+        await msg.answer("Функционал допиливается")
+    else:
+        await msg.answer("У вас нет доступа к функционалу бота. Попросите админа оформить подписку")
+async def main():
+    await dp.start_polling(bot)
 if __name__ == '__main__':
-    executor.start_polling(dispatcher=dp, skip_updates=True)
+    logging.basicConfig(level=logging.INFO, stream=sys.stdout)
+    asyncio.run(main())

@@ -1,7 +1,5 @@
-import subprocess
+import psutil
 
-subprocess.run(["python", "my_parser.py"])
+battery = psutil.sensors_battery()
 
-subprocess.run(["python", "bot.py"])
-
-subprocess.run(["python", "observer.py"])
+print(battery)
