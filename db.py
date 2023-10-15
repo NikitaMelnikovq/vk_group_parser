@@ -35,14 +35,12 @@ class Post(Base):
     post_text = Column(Text)
     post_link = Column(VARCHAR(length=250))
     post_date = Column(DateTime)
-    video_urls = Column(JSON)
-    image_urls = Column(JSON)
-    audio_urls = Column(JSON)
-    links = Column(JSON)
-    doc_urls = Column(JSON)
-    podcast_urls = Column(JSON)
     identity_date = Column(Integer)
 
-class UserGroups(Base):
+class User_groups(Base):
     __tablename__ = "user_groups"
     group_id = Column(Integer, primary_key=True)
+
+class Last_message(Base):
+    __tablename__ = "last_update"
+    id_date = Column(Integer, primary_key=True)

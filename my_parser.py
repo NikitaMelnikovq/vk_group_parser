@@ -5,7 +5,7 @@ from datetime import datetime
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 import schedule
-from db import url_object, Post, UserGroups
+from db import url_object, Post, User_groups
 
 def gather_data():
     # Основные данные
@@ -14,7 +14,7 @@ def gather_data():
     f_session = Session(bind=f_engine)
 
     # Получаем необходимые для парсинга группы
-    user_groups = [group.group_id for group in f_session.query(UserGroups).all()]
+    user_groups = [group.group_id for group in f_session.query(User_groups).all()]
     f_session.commit()
     f_session.close()
     posts = []
@@ -45,43 +45,6 @@ def gather_data():
         date = datetime.fromtimestamp(post_date)
         date = date.strftime('%Y-%m-%d %H-%M-%S')
 
-        # Смотрим, какие у поста есть закрепы
-        attachments = post["attachments"]
-
-        # Работаем с закрепами 
-        urls = {
-            "Video": [],
-            "Audio": [],
-            "Photo": [],
-            "Link": [],
-            "Document": [],
-            "Podcasts": []
-        }
-        if len(attachments) > 0:
-            for attachment in attachments:
-                # Обрабатываем фото
-                if attachment["type"] == "photo":
-                    photo = attachment.get("photo")
-                    sizes = photo.get("sizes")
-                    for size in sizes:
-                        if size["type"] == 'x':
-                            urls["Photo"].append(size["url"])
-
-                # Обрабатываем документы
-                if attachment["type"] == "doc":
-                    doc = attachment.get("doc")
-                    urls["Document"].append(doc["url"])
-
-                # Обрабатываем ссылки
-                if attachment["type"] == 'link':
-                    link = attachment.get("link")
-                    urls["Link"].append(link["url"])
-
-                # Обрабатываем аудио
-                if attachment["type"] == 'audio':
-                    audio = attachment.get("audio")
-                    urls["Audio"].append(audio["url"])
-
         # Записываем данные в БД
         engine = create_engine(url=url_object)
         session = Session(bind=engine)
@@ -96,12 +59,6 @@ def gather_data():
             new_post.group_name = group_name
             new_post.post_text = post_text
             new_post.post_link = post_link
-            new_post.links = urls["Link"]
-            new_post.doc_urls = urls["Document"]
-            new_post.image_urls = urls["Photo"]
-            new_post.audio_urls = urls["Audio"]
-            new_post.video_urls = urls["Video"]
-            new_post.podcast_urls = urls["Podcasts"]
             session.add(new_post)        
         session.commit()
         session.close()

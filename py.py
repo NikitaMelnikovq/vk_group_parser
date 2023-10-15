@@ -1,17 +1,18 @@
-from db import UserGroups, url_object
-from sqlalchemy import create_engine
-from sqlalchemy.orm import Session
+from config import BOT_TOKEN
+from aiogram import Bot, Dispatcher, types 
+from aiogram.filters import CommandStart
+import asyncio
 
+bot = Bot(token=BOT_TOKEN)
+dp = Dispatcher(bot=bot)
 
+@dp.message(CommandStart())
+async def main(msg: types.Message):
+    await msg.answer("h")
+    print(msg.chat.id)
 
-with open("groups.txt") as file:
-    groups = file.readlines()
-    groups = [int(group.strip()) for group in groups]
-    engine = create_engine(url=url_object)
-    session = Session(bind=engine)
+async def main():
+    await dp.start_polling(bot)
 
-    for group in groups:
-        new_group = UserGroups(group_id=group)
-        session.add(new_group)
-    session.commit()
-    session.close()
+if __name__ == "__main__":
+    asyncio.run(main())
