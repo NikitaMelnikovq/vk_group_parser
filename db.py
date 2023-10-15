@@ -1,4 +1,4 @@
-from sqlalchemy import URL, Integer, Column, DateTime, JSON, Text, Boolean, INTEGER
+from sqlalchemy import URL, Integer, Column, DateTime, JSON, Text, Boolean, INTEGER, VARCHAR
 from sqlalchemy.orm import declarative_base
 from config import DATABASE_HOST, DATABASE_PASSWORD, DATABASE_PORT, DATABASE_USERNAME, DATABASE
 
@@ -24,14 +24,16 @@ Base = declarative_base()
 class User(Base):
     __tablename__ = "users"
     user_id = Column(Integer, primary_key=True)
-    join_time = Column(DateTime)
+    join_time = Column(DateTime, nullable=True)
     updates = Column(Boolean)
+    want_updates = Column(Boolean)
 
 class Post(Base):
     __tablename__ = "posts"
-    group_name = Column(Text)
+    group_name = Column(VARCHAR(length=250))
     post_id = Column(Integer, primary_key=True)
     post_text = Column(Text)
+    post_link = Column(VARCHAR(length=250))
     post_date = Column(DateTime)
     video_urls = Column(JSON)
     image_urls = Column(JSON)
@@ -39,7 +41,7 @@ class Post(Base):
     links = Column(JSON)
     doc_urls = Column(JSON)
     podcast_urls = Column(JSON)
-    indentity_date = Column(Integer)
+    identity_date = Column(Integer)
 
 class UserGroups(Base):
     __tablename__ = "user_groups"
