@@ -8,6 +8,7 @@ from aiogram.exceptions import TelegramAPIError
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy.future import select
 from sqlalchemy import update
+
 # credentials imports
 from db import url_object_async, User, Last_message, Post
 from config import BOT_TOKEN
@@ -86,7 +87,6 @@ async def send_messages(user):
         select_last_message = select(Last_message)
         result = await session.execute(select_last_message) 
         date = result.scalars().first()
-        
         select_posts = select(Post).where(Post.identity_date > date.id_date).order_by(Post.identity_date.asc())
         posts = await session.execute(select_posts)
         posts = posts.scalars().all()
@@ -99,19 +99,19 @@ async def send_messages(user):
             await bot.send_message(chat_id=user.user_id, text=final_message)
             await asyncio.sleep(1)
             await session.execute(update(Last_message).values(id_date=post.identity_date))
+            await session.commit()
 
 async def send_message_to_users():
-    async with async_session() as session:
-        select_users = select(User).where(User.updates == 1)
-        result = await session.execute(select_users)
-        users = result.scalars().all()
-        for user in users:
-            try:
-                await send_messages(user)
-            except TelegramAPIError as e:
-                print("Bot blocked")
-            finally:
-                await asyncio.sleep(1)
+    while True:
+        async with async_session() as session:
+            select_users = select(User).where(User.updates == 1)
+            result = await session.execute(select_users)
+            users = result.scalars().all()
+            for user in users:
+                try:
+                    await send_messages(user)
+                except TelegramAPIError as e:
+                    print("Bot blocked")
 async def main():
     tasks = [dp.start_polling(bot), send_message_to_users()]
     await asyncio.gather(*tasks)
