@@ -1,4 +1,4 @@
-from sqlalchemy import URL, Integer, Column, DateTime, JSON, Text, Boolean, INTEGER, VARCHAR, ForeignKey, create_engine
+from sqlalchemy import URL, Integer, Column, DateTime, Text, Boolean, VARCHAR, ForeignKey
 from sqlalchemy.orm import declarative_base
 from config import DATABASE_HOST, DATABASE_PASSWORD, DATABASE_PORT, DATABASE_USERNAME, DATABASE
 
@@ -42,13 +42,8 @@ class Post(Base):
     post_link = Column(VARCHAR(length=250))
     post_date = Column(DateTime)
     identity_date = Column(Integer)
+    sent = Column(Boolean, default=0)
 
-class UserGroup(Base):
-    __tablename__ = "userGroup"
-    id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("users.user_id"))
-    group_name = Column(Integer, ForeignKey("groups.group_id"))
-
-class LastUpdate(Base):
-    __tablename__ = "last_update"
-    id = Column(Integer, primary_key=True)
+class AllPosts(Base):
+    __tablename__ = "all_posts"
+    post_id = Column(Integer, primary_key=True)
