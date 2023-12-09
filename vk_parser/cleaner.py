@@ -10,7 +10,7 @@ def clean_table():
     session = Session(bind=engine)
     
     stmt = Delete(Post).filter(Post.sent == 1)
-
+    print(stmt)
     session.execute(stmt)
     session.commit()
     session.close()

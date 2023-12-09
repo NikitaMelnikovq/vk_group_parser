@@ -1,4 +1,4 @@
-from sqlalchemy import URL, Integer, Column, DateTime, Text, Boolean, VARCHAR, ForeignKey
+from sqlalchemy import URL, Integer, Column, DateTime, Text, Boolean, VARCHAR
 from sqlalchemy.orm import declarative_base
 from config import DATABASE_HOST, DATABASE_PASSWORD, DATABASE_PORT, DATABASE_USERNAME, DATABASE
 

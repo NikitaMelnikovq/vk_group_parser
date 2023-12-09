@@ -1,7 +1,7 @@
 from aiogram import F, Router
 from aiogram.types import Message
 from aiogram.filters import Command, CommandStart
-from sqlalchemy import create_engine, delete, update
+from sqlalchemy import create_engine, delete
 from sqlalchemy.orm import Session
 from db import url_object, User, Group
 from bot_keyboard import keyboard
@@ -124,7 +124,7 @@ async def turn_on_updates(msg: Message):
         await msg.answer(text="У вас уже подключены обновления")
     else:
         await msg.answer(text="Вы подключили обновления")
-        stmt = session.query(User).filter(User.user_id == msg.from_user.id).filter(User.want_updates == 1).update({"want_updates": 0})
+        session.query(User).filter(User.user_id == msg.from_user.id).filter(User.want_updates == 1).update({"want_updates": 0})
         close_session(session=session)
 
 @router.message(Command("updates_off", ignore_case=True))

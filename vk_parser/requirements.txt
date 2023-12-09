@@ -1,0 +1,6 @@
+aiogram
+sqlalchemy
+mysql-python-connector
+aiomysql
+schedule
+requests

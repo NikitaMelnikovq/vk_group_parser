@@ -21,7 +21,7 @@ def gather_data_for_group(session: Session, group: Group) -> None:
         logging.error(f"An error occurred: {error}", exc_info=True)
 
     time.sleep(0.2)
-
+    
     for post in posts:
         post_id = post["id"]
         post_text = post["text"]

@@ -19,8 +19,8 @@ async def send_message(bot: Bot, user, post: Post):
     await bot.send_message(chat_id=user.user_id, text=post_message)
 
 async def send_messages():
-    engine = create_engine(url=url_object) 
-    session = Session(bind=engine)
+    engine = create_engine(url=url_object, pool_recycle=3600) 
+    session = Session(bind=engine, expire_on_commit=False)
 
     while True:
         user = session.query(User).filter(User.updates == 1 and User.want_updates == 1).first()
