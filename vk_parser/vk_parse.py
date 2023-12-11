@@ -8,6 +8,7 @@ from config import API_KEY
 from db import url_object, Post, Group, AllPosts
 from functions import get_group_name, convert_time
 import logging
+
 logging.basicConfig(filename=f'error_in_{sys.argv[0]}{str(int(time.time()))}.txt', level=logging.ERROR, format='%(asctime)s [%(levelname)s] - %(message)s')
 
 def gather_data_for_group(session: Session, group: Group) -> None:
