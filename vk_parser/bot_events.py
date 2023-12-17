@@ -124,7 +124,7 @@ async def turn_on_updates(msg: Message):
         await msg.answer(text="У вас уже подключены обновления")
     else:
         await msg.answer(text="Вы подключили обновления")
-        session.query(User).filter(User.user_id == msg.from_user.id).filter(User.want_updates == 1).update({"want_updates": 0})
+        session.query(User).filter(User.user_id == msg.from_user.id).filter(User.want_updates == 0).update({"want_updates": 1})
         close_session(session=session)
 
 @router.message(Command("updates_off", ignore_case=True))
@@ -135,6 +135,5 @@ async def turn_on_updates(msg: Message):
         await msg.answer(text="У вас уже отключены обновления")
     else:
         await msg.answer(text="Вы отключили обновления")
-        session.query(User).filter(User.user_id == msg.from_user.id).filter(User.want_updates == 0).update({"want_updates": 1})
+        session.query(User).filter(User.user_id == msg.from_user.id).filter(User.want_updates == 1).update({"want_updates": 0})
         close_session(session=session)
-        

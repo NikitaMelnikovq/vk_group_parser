@@ -9,8 +9,7 @@ def clean_table():
     engine = create_engine(url=url_object)
     session = Session(bind=engine)
     
-    stmt = Delete(Post).filter(Post.sent == 1)
-    print(stmt)
+    stmt = Delete(Post).filter(Post.sent == 1).filter(int(time.time()) - Post.identity_date < 86400)
     session.execute(stmt)
     session.commit()
     session.close()

@@ -11,15 +11,36 @@ import logging
 
 logging.basicConfig(filename=f'error_in_{sys.argv[0]}{str(int(time.time()))}.txt', level=logging.ERROR, format='%(asctime)s [%(levelname)s] - %(message)s')
 
+def make_request(url):
+    try:
+        response = requests.get(url)
+        response.raise_for_status()  # Raise an HTTPError for bad responses
+        return response.json()["response"]["items"]
+    except requests.exceptions.RequestException as e:
+        logging.error(f"Request failed: {e}", exc_info=True)
+        return None
+    except KeyError as e:
+        logging.error(f"KeyError: {e}", exc_info=True)
+        return None
+
 def gather_data_for_group(session: Session, group: Group) -> None:
     group_id = group.group_id
     group_name = get_group_name(group_id, session)
 
-    try:
-        posts = requests.get(f"https://api.vk.com/method/wall.get?owner_id=-{group_id}&count={3}&access_token={API_KEY}&v=5.199").json()["response"]["items"]
+    url = f"https://api.vk.com/method/wall.get?owner_id=-{group_id}&count={3}&access_token={API_KEY}&v=5.199"
+    max_retries = 3
 
-    except KeyError as error:
-        logging.error(f"An error occurred: {error}", exc_info=True)
+    for retry in range(max_retries):
+        posts = make_request(url)
+
+        if posts is not None:
+            break
+
+        time.sleep(3600)  # Adjust the delay as needed
+
+    else:
+        logging.error(f"Max retries reached. Unable to obtain data for group {group_id}")
+        return
 
     time.sleep(0.2)
     
@@ -64,11 +85,10 @@ def gather_data():
 
 def main():
     schedule.every(10).minutes.do(gather_data)
-    gather_data()
 
     while True:
         schedule.run_pending()
         time.sleep(3)
 
 if __name__ == '__main__':
-     main()
+    main()
