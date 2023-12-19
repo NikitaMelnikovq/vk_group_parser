@@ -48,7 +48,7 @@ def gather_data_for_group(session: Session, group: Group) -> None:
         post_id = post["id"]
         post_text = post["text"]
         post_date = post["date"]
-        post_link = f"https://vk.com/wall{group_id}_{post_id}"
+        post_link = f"https://vk.com/wall-{group_id}_{post_id}"
 
         date = convert_time(post_date)
 
@@ -72,16 +72,16 @@ def gather_data_for_group(session: Session, group: Group) -> None:
         session.add(unique_post)
 
 def gather_data():
+    
     engine = create_engine(url=url_object)
-    session = Session(bind=engine)
+    with Session(bind=engine) as session:
+        groups = session.query(Group).all()
 
-    groups = session.query(Group).all()
+        for group in groups:
+            gather_data_for_group(session, group)
 
-    for group in groups:
-        gather_data_for_group(session, group)
-
-    session.commit()
-    session.close()
+        session.commit()
+        session.close()
 
 def main():
     schedule.every(10).minutes.do(gather_data)
